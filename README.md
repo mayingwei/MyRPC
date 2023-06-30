@@ -5,8 +5,7 @@
 
 RPC 又称远程过程调用（Remote Procedure Call），用于解决分布式系统中服务之间的调用问题。通俗地讲，就是开发者能够像调用本地方法一样调用远程的服务。
 
-![1688103229480](README.assets/1688103229480.png)
-https://github.com/mayingwei/MyRPC/blob/main/images/structure.png
+![Image text](https://github.com/mayingwei/MyRPC/blob/main/images/structure.png)
 
 - 服务端在启动后，会将它提供的服务列表发布到注册中心，客户端向注册中心订阅服务地址；
 - 客户端会通过本地代理模块 Proxy 调用服务端，Proxy 模块收到负责将方法、参数等数据转化成网络字节流；
