@@ -14,6 +14,7 @@ import io.netty.channel.ChannelPipeline;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.timeout.IdleStateHandler;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -25,6 +26,7 @@ import org.springframework.context.ApplicationContextAware;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 /**
  * ApplicationContextAware接口
@@ -140,12 +142,23 @@ public class RpcServer implements ApplicationContextAware, InitializingBean {
                 protected void initChannel(SocketChannel socketChannel) throws Exception {
                     // 获取ChannelPipeline，用于管理处理器链
                     ChannelPipeline pipeline = socketChannel.pipeline();
+
+                    //1. IdleStateHandler 是 netty 提供的处理空闲状态的处理器
+                    //2. long readerIdleTime : 表示多长时间没有读, 就会发送一个心跳检测包检测是否连接
+                    //3. long writerIdleTime : 表示多长时间没有写, 就会发送一个心跳检测包检测是否连接
+                    //4. long allIdleTime : 表示多长时间没有读写, 就会发送一个心跳检测包检测是否连接
+                    //30 秒之内没有收到客户端请求的话就关闭连接
+                    LOGGER.info("初始化");
+                    pipeline.addLast(new IdleStateHandler(30, 0, 0, TimeUnit.SECONDS));
+
                     // 添加自定义的解码器RpcDecoder
                     pipeline.addLast(new RpcDecoder(RpcRequest.class));
                     // 添加自定义的编码器RpcEncoder
                     pipeline.addLast(new RpcEncoder(RpcResponse.class));
+
                     // 添加自定义的处理器RpcServerHandler，用于处理RPC请求
                     pipeline.addLast(new RpcServerHandler(handlerMap));
+
                     //加入自定义异常处理
                     pipeline.addLast(new ExceptionHandler());
 
