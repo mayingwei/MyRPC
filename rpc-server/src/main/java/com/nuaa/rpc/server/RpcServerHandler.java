@@ -5,13 +5,18 @@ import com.nuaa.entity.RpcResponse;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.handler.timeout.IdleState;
+import io.netty.handler.timeout.IdleStateEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cglib.reflect.FastClass;
+import org.springframework.cglib.reflect.FastMethod;
 import org.springframework.util.StringUtils;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * RPC 服务端处理器，接收请求并响应
@@ -67,6 +72,21 @@ public class RpcServerHandler extends SimpleChannelInboundHandler<RpcRequest> {
         ctx.close();
     }
 
+    @Override
+    public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
+        LOGGER.info("处理空闲连接");
+        if (evt instanceof IdleStateEvent) {
+            IdleState state = ((IdleStateEvent) evt).state();
+            if (state == IdleState.READER_IDLE) {
+                LOGGER.info("idle check happen, so close the connection");
+                ctx.close();
+            }
+        } else {
+            super.userEventTriggered(ctx, evt);
+        }
+    }
+
+
     /**
      * 获取客户端请求的方法和参数，通过反射进行调用）
      *@param rpcRequest RPC 请求对象，包含客户端发送的请求信息
@@ -97,10 +117,30 @@ public class RpcServerHandler extends SimpleChannelInboundHandler<RpcRequest> {
         String methodName = rpcRequest.getMethodName();
         Object[] parameters = rpcRequest.getParameters();
         Class<?>[] parameterTypes = rpcRequest.getParameterTypes();
-        // 通过反射调用客户端请求的方法
-        Method method = serviceClass.getMethod(methodName, parameterTypes);
-        method.setAccessible(true);
+        // JDK reflect
+        // Method method = serviceClass.getMethod(methodName, parameterTypes);
+        // method.setAccessible(true);
+        // return method.invoke(serviceBean, parameters);
+
+        // Cglib reflect
+        //1 在运行时，CGLIB会通过字节码生成技术创建一个目标类的子类。这个子类继承自目标类，并重写了目标类中的方法。
+        //2 在子类中，CGLIB会生成一个MethodProxy对象，用于代理目标类中的方法。
+        //3 MethodProxy对象中包含了对目标类方法的索引，以及对方法的直接调用逻辑。
+        //4 当需要调用目标类的方法时，不再使用反射，而是直接通过MethodProxy对象调用目标方法。
+        //5 MethodProxy对象内部通过索引定位到目标方法，然后直接调用目标方法的字节码逻辑，省去了反射查找和调用的开销。
+        //6 这样，在多次调用目标方法时，可以直接使用MethodProxy对象进行快速的方法调用，避免了每次都使用反射的性能损耗。
+
+        //提前构建服务类（serviceClass）的FastClass对象（serviceFastClass）
         LOGGER.info(serviceName+" 调用");
-        return method.invoke(serviceBean, parameters);
+        FastClass serviceFastClass = FastClass.create(serviceClass);
+        //FastMethod serviceFastMethod = serviceFastClass.getMethod(methodName, parameterTypes);
+        //return serviceFastMethod.invoke(serviceBean, parameters);
+        //通过服务类的FastClass对象（serviceFastClass）获取指定方法（methodName）在服务类中的索引（methodIndex）。
+        int methodIndex = serviceFastClass.getIndex(methodName, parameterTypes);
+        //使用服务类的FastClass对象（serviceFastClass），根据方法索引（methodIndex）调用目标方法，并传递相应的参数
+        return serviceFastClass.invoke(methodIndex, serviceBean, parameters);
     }
+
+
+
 }
