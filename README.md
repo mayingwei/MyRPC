@@ -21,7 +21,15 @@ RPC 又称远程过程调用（Remote Procedure Call），用于解决分布式�
 3. rpc-client : RPC客户端，向服务端发送请求和消息体，接收服务端的响应。
 4. rpc-registry :基于Zookeeper 及其客户端ZkClient 实现服务的注册与发现
 
-## 三 技术选型
+## 三 项目搭建
+环境搭建
+操作系统：Windows 10 家庭中文版
+集成开发工具：IntelliJ IDEA
+项目技术栈：Spring 5.2.8.RELEASE + JDK 1.8.0_221 + Netty 4.1.42
+项目依赖管理工具：Maven 3.5.4
+注册中心：Zookeeeper 3.4.8
+
+## 四 技术选型
 
 **1 注册中心**
 
