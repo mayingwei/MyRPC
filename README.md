@@ -16,10 +16,10 @@ RPC 又称远程过程调用（Remote Procedure Call），用于解决分布式�
 ## 二 模块概览
 
 本框架的核心功能模块:
-rpc-common:包含封装RPC请求与响应的消息体，Netty编解码器codec以及基于Protostuff实现的序列化/反序列功能
-rpc-server : RPC服务端，接收客户端的请求和消息体，处理并响应客户端的请求/消息体
-rpc-client : RPC客户端，向服务端发送请求和消息体，接收服务端的响应。
-rpc-registry :基于Zookeeper 及其客户端ZkClient 实现服务的注册与发现
+1. rpc-common:包含封装RPC请求与响应的消息体，Netty编解码器codec以及基于Protostuff实现的序列化/反序列功能
+2. rpc-server : RPC服务端，接收客户端的请求和消息体，处理并响应客户端的请求/消息体
+3. rpc-client : RPC客户端，向服务端发送请求和消息体，接收服务端的响应。
+4. rpc-registry :基于Zookeeper 及其客户端ZkClient 实现服务的注册与发现
 
 ## 三 技术选型
 
